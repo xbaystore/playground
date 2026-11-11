@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Playground Mini-Apps &amp; Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #f4f2ec;
+        --surface: #fffdf8;
+        --surface-2: #eceade;
+        --ink: #1c1a15;
+        --ink-soft: #5c574c;
+        --line: #1c1a15;
+        --shadow: 5px 5px 0 var(--ink);
+        --coral: #ff5d47;
+        --teal: #0e9594;
+        --amber: #f5a301;
+        --sky: #3d8bfd;
+        --pink: #ef6fb0;
+        --lime: #7fb800;
+        --violet: #7a5af8;
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14161a;
+          --surface: #1e2126;
+          --surface-2: #262a30;
+          --ink: #f2efe6;
+          --ink-soft: #a8a294;
+          --line: #f2efe6;
+          --shadow: 5px 5px 0 rgba(0,0,0,.55);
+        }
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Archivo", system-ui, -apple-system, sans-serif;
+        line-height: 1.45;
+      }
+      button, input { font: inherit; }
+      button { min-height: 40px; cursor: pointer; }
+      .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+      .wrap { max-width: 1120px; margin: 0 auto; padding: 28px 18px 56px; }
+
+      header.hero { padding: 10px 0 6px; }
+      .hero h1 {
+        font-family: "Bricolage Grotesque", "Archivo", sans-serif;
+        font-weight: 800;
+        font-size: clamp(2.1rem, 6vw, 3.4rem);
+        line-height: 1.02;
+        letter-spacing: -0.01em;
+        margin: 0 0 10px;
+      }
+      .hero h1 .hl-coral { color: var(--coral); }
+      .hero h1 .hl-teal { color: var(--teal); }
+      .hero p { margin: 0; max-width: 56ch; color: var(--ink-soft); font-size: 1.02rem; }
+      .hero .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+      .chip {
+        font-size: .8rem; font-weight: 600; padding: 5px 11px;
+        border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface);
+      }
+
+      h2.section-title {
+        font-family: "Bricolage Grotesque", "Archivo", sans-serif;
+        font-size: 1.45rem; font-weight: 700; margin: 38px 0 4px;
+        display: flex; align-items: center; gap: 10px;
+      }
+      h2.section-title::after { content: ""; flex: 1; height: 2px; background: var(--line); opacity: .25; }
+      .section-sub { margin: 0 0 18px; color: var(--ink-soft); font-size: .95rem; }
+
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 22px; }
+      @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } }
+
+      .card {
+        background: var(--surface);
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 18px;
+        display: flex; flex-direction: column; gap: 12px;
+      }
+      .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+      .card-head h3 {
+        font-family: "Bricolage Grotesque", "Archivo", sans-serif;
+        font-size: 1.18rem; font-weight: 700; margin: 0;
+      }
+      .tag {
+        font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+        padding: 3px 8px; border-radius: 6px; color: #141310; white-space: nowrap;
+      }
+      .tag.coral { background: var(--coral); color: #fff; }
+      .tag.teal { background: var(--teal); color: #fff; }
+      .tag.amber { background: var(--amber); }
+      .tag.sky { background: var(--sky); color: #fff; }
+      .tag.pink { background: var(--pink); color: #fff; }
+      .tag.lime { background: var(--lime); color: #fff; }
+      .tag.violet { background: var(--violet); color: #fff; }
+      .card p.desc { margin: 0; color: var(--ink-soft); font-size: .9rem; }
+      .status { font-size: .92rem; font-weight: 600; min-height: 1.35em; }
+      .status:empty { display: none; }
+
+      .btn {
+        border: 2px solid var(--line); border-radius: 10px; background: var(--surface);
+        color: var(--ink); font-weight: 700; padding: 8px 16px;
+        transition: transform .08s ease, background .15s ease;
+      }
+      .btn:hover { background: var(--surface-2); }
+      .btn:active { transform: translate(2px, 2px); }
+      .btn.primary { background: var(--ink); color: var(--bg); }
+      .btn.primary:hover { opacity: .88; background: var(--ink); }
+      .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+      .score-line { display: flex; gap: 16px; flex-wrap: wrap; font-size: .9rem; color: var(--ink-soft); }
+      .score-line b { color: var(--ink); }
+
+      /* ---------- Snake ---------- */
+      .snake-stage { position: relative; align-self: center; width: 100%; max-width: 320px; }
+      canvas#snakeCanvas {
+        width: 100%; height: auto; display: block;
+        background: #101408; border: 2px solid var(--line); border-radius: 10px;
+        touch-action: none;
+      }
+      .dpad { display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(3, 48px); gap: 6px; justify-content: center; }
+      .dpad button {
+        border: 2px solid var(--line); border-radius: 10px; background: var(--surface-2);
+        color: var(--ink); font-size: 1.05rem; font-weight: 700; min-height: 44px;
+      }
+      .dpad button:active { background: var(--amber); }
+      .dpad .up { grid-column: 2; grid-row: 1; }
+      .dpad .left { grid-column: 1; grid-row: 2; }
+      .dpad .right { grid-column: 3; grid-row: 2; }
+      .dpad .down { grid-column: 2; grid-row: 3; }
+
+      /* ---------- Memory ---------- */
+      .mem-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .mem-card {
+        aspect-ratio: 1; border: 2px solid var(--line); border-radius: 10px;
+        background: var(--surface-2); font-size: clamp(1.4rem, 6vw, 1.9rem);
+        display: flex; align-items: center; justify-content: center;
+        padding: 0; min-height: 44px; user-select: none;
+        transition: transform .15s ease, background .15s ease;
+      }
+      .mem-card .face { display: none; }
+      .mem-card .back { color: var(--ink-soft); font-weight: 800; font-family: "Bricolage Grotesque", sans-serif; }
+      .mem-card.open, .mem-card.done { background: var(--surface); transform: rotateY(0); }
+      .mem-card.open .face, .mem-card.done .face { display: block; }
+      .mem-card.open .back, .mem-card.done .back { display: none; }
+      .mem-card.done { background: #e7f4d4; border-color: var(--lime); }
+      @media (prefers-color-scheme: dark) { .mem-card.done { background: #2c3a17; } }
+
+      /* ---------- Tic-Tac-Toe ---------- */
+      .ttt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 264px; margin: 0 auto; width: 100%; }
+      .ttt-cell {
+        aspect-ratio: 1; border: 2px solid var(--line); border-radius: 10px;
+        background: var(--surface-2); font-family: "Bricolage Grotesque", sans-serif;
+        font-size: 2rem; font-weight: 800; color: var(--ink); padding: 0; min-height: 56px;
+      }
+      .ttt-cell.win { background: var(--amber); color: #141310; }
+      .ttt-cell:disabled { cursor: default; opacity: 1; }
+
+      /* ---------- Reaction ---------- */
+      .react-box {
+        border: 2px solid var(--line); border-radius: 12px; min-height: 168px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 6px; text-align: center; padding: 18px; cursor: pointer; user-select: none;
+        background: var(--surface-2); color: var(--ink); width: 100%;
+      }
+      .react-box .big { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.5rem; font-weight: 800; }
+      .react-box .small { font-size: .88rem; opacity: .85; }
+      .react-box.wait { background: var(--coral); color: #fff; border-color: var(--coral); }
+      .react-box.ready { background: var(--lime); color: #fff; border-color: var(--lime); }
+
+      /* ---------- Stopwatch ---------- */
+      .sw-display {
+        font-size: clamp(2rem, 8vw, 2.7rem); font-weight: 700; text-align: center;
+        background: var(--surface-2); border: 2px solid var(--line); border-radius: 12px;
+        padding: 14px 8px; letter-spacing: .02em;
+      }
+      .lap-list { margin: 0; padding: 0; list-style: none; max-height: 132px; overflow-y: auto; font-size: .92rem; }
+      .lap-list li { display: flex; justify-content: space-between; padding: 5px 2px; border-bottom: 1px dashed color-mix(in srgb, var(--ink) 25%, transparent); }
+      .lap-list:empty { display: none; }
+
+      /* ---------- Password ---------- */
+      .pw-out {
+        display: flex; gap: 8px; align-items: stretch;
+      }
+      .pw-out output {
+        flex: 1; min-width: 0; background: var(--surface-2); border: 2px solid var(--line);
+        border-radius: 10px; padding: 10px 12px; font-size: .98rem;
+        overflow-x: auto; white-space: nowrap; display: flex; align-items: center;
+      }
+      .pw-len { display: flex; align-items: center; gap: 12px; }
+      .pw-len input[type="range"] { flex: 1; min-height: 36px; accent-color: var(--teal); }
+      .toggle-row { display: flex; flex-wrap: wrap; gap: 8px; }
+      .toggle {
+        border: 2px solid var(--line); border-radius: 999px; background: var(--surface);
+        color: var(--ink-soft); font-weight: 600; font-size: .88rem; padding: 6px 14px; min-height: 38px;
+      }
+      .toggle[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+      /* ---------- Dice ---------- */
+      .dice-row { display: flex; gap: 16px; justify-content: center; align-items: center; }
+      .die {
+        width: 84px; height: 84px; background: var(--surface); border: 2.5px solid var(--line);
+        border-radius: 16px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+        padding: 12px; box-shadow: 3px 3px 0 var(--ink);
+      }
+      .die .pip { width: 13px; height: 13px; border-radius: 50%; background: var(--ink); place-self: center; visibility: hidden; }
+      .die .pip.on { visibility: visible; }
+      .die.rolling { animation: shake .45s ease; }
+      @keyframes shake {
+        0%,100% { transform: rotate(0); } 20% { transform: rotate(-9deg) translateY(-4px); }
+        45% { transform: rotate(8deg); } 70% { transform: rotate(-6deg) translateY(2px); }
+      }
+
+      /* ---------- Calculator ---------- */
+      .calc-display {
+        background: #101408; color: #d9f99d; border-radius: 10px; padding: 14px 16px;
+        font-size: 1.7rem; font-weight: 700; text-align: right; min-height: 64px;
+        overflow-x: auto; white-space: nowrap;
+      }
+      .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .calc-grid button {
+        border: 2px solid var(--line); border-radius: 10px; background: var(--surface-2);
+        color: var(--ink); font-size: 1.12rem; font-weight: 700; min-height: 48px; padding: 6px 0;
+      }
+      .calc-grid button.op { background: var(--amber); color: #141310; }
+      .calc-grid button.eq { background: var(--coral); color: #fff; border-color: var(--coral); }
+      .calc-grid button:active { transform: translate(1px, 1px); }
+
+      footer { margin-top: 44px; color: var(--ink-soft); font-size: .88rem; text-align: center; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .die.rolling { animation: none; }
+        * { transition: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hero">
+        <h1>Playground<br /><span class="hl-coral">Mini-Apps</span> &amp; <span class="hl-teal">Game</span></h1>
+        <p>Satu halaman isinya mainan semua: empat game buat ngadu refleks &amp; otak, plus empat mini-apps kecil yang kepakai sehari-hari. Nggak perlu install, nggak perlu akun — buka, klik, main.</p>
+        <div class="chips">
+          <span class="chip">8 mainan</span>
+          <span class="chip">Bisa di HP &amp; desktop</span>
+          <span class="chip">Skor terbaik tersimpan selama sesi ini</span>
+        </div>
+      </header>
+
+      <h2 class="section-title">Game</h2>
+      <p class="section-sub">Buat iseng, adu skor sama diri sendiri, atau pamer ke teman.</p>
+
+      <div class="grid">
+        <!-- SNAKE -->
+        <section class="card" aria-labelledby="t-snake">
+          <div class="card-head"><h3 id="t-snake">Snake Klasik</h3><span class="tag coral">Game</span></div>
+          <p class="desc">Makan apelnya, jangan nabrak tembok atau badan sendiri. Makin panjang, makin deg-degan.</p>
+          <div class="snake-stage">
+            <canvas id="snakeCanvas" width="320" height="320" aria-label="Arena permainan snake"></canvas>
+          </div>
+          <div class="score-line">
+            <span>Skor: <b class="mono" id="snakeScore">0</b></span>
+            <span>Terbaik: <b class="mono" id="snakeBest">0</b></span>
+          </div>
+          <p class="status" id="snakeStatus">Tekan Mulai, arahkan pakai tombol panah / WASD / tombol di bawah.</p>
+          <div class="btn-row">
+            <button class="btn primary" id="snakeStart" type="button">Mulai</button>
+            <button class="btn" id="snakePause" type="button">Jeda</button>
+          </div>
+          <div class="dpad" aria-label="Kontrol arah snake">
+            <button type="button" class="up" data-dir="up" aria-label="Atas">▲</button>
+            <button type="button" class="left" data-dir="left" aria-label="Kiri">◀</button>
+            <button type="button" class="right" data-dir="right" aria-label="Kanan">▶</button>
+            <button type="button" class="down" data-dir="down" aria-label="Bawah">▼</button>
+          </div>
+        </section>
+
+        <!-- MEMORY -->
+        <section class="card" aria-labelledby="t-memory">
+          <div class="card-head"><h3 id="t-memory">Memory Match</h3><span class="tag teal">Game</span></div>
+          <p class="desc">Balik kartu dan temukan 6 pasangannya. Selesaikan dengan langkah sesedikit mungkin.</p>
+          <div class="mem-grid" id="memGrid" role="group" aria-label="Kartu memory"></div>
+          <div class="score-line">
+            <span>Langkah: <b class="mono" id="memMoves">0</b></span>
+            <span>Pasangan: <b class="mono" id="memPairs">0 / 6</b></span>
+          </div>
+          <p class="status" id="memStatus"></p>
+          <div class="btn-row">
+            <button class="btn primary" id="memReset" type="button">Acak Ulang</button>
+          </div>
+        </section>
+
+        <!-- TIC TAC TOE -->
+        <section class="card" aria-labelledby="t-ttt">
+          <div class="card-head"><h3 id="t-ttt">Tic-Tac-Toe vs Komputer</h3><span class="tag amber">Game</span></div>
+          <p class="desc">Kamu main X, komputer main O. Komputernya lumayan pinter — dia bakal ngeblok langkah menangmu.</p>
+          <div class="ttt-grid" id="tttGrid" role="group" aria-label="Papan tic-tac-toe"></div>
+          <p class="status" id="tttStatus">Giliranmu. Pilih kotak kosong.</p>
+          <div class="score-line">
+            <span>Kamu (X): <b class="mono" id="tttWinX">0</b></span>
+            <span>Seri: <b class="mono" id="tttDraw">0</b></span>
+            <span>Komputer (O): <b class="mono" id="tttWinO">0</b></span>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary" id="tttReset" type="button">Ronde Baru</button>
+          </div>
+        </section>
+
+        <!-- REACTION -->
+        <section class="card" aria-labelledby="t-react">
+          <div class="card-head"><h3 id="t-react">Tes Reaksi</h3><span class="tag sky">Game</span></div>
+          <p class="desc">Seberapa cepat jarimu? Klik kotaknya, tunggu sampai hijau, lalu klik secepat kilat.</p>
+          <button class="react-box" id="reactBox" type="button" aria-live="polite">
+            <span class="big" id="reactBig">Klik untuk mulai</span>
+            <span class="small" id="reactSmall">Kotak akan merah dulu — jangan klik sebelum hijau.</span>
+          </button>
+          <div class="score-line">
+            <span>Terakhir: <b class="mono" id="reactLast">—</b></span>
+            <span>Terbaik: <b class="mono" id="reactBest">—</b></span>
+          </div>
+        </section>
+      </div>
+
+      <h2 class="section-title">Mini-Apps</h2>
+      <p class="section-sub">Alat-alat kecil yang sering kepakai, tanpa ribet.</p>
+
+      <div class="grid">
+        <!-- STOPWATCH -->
+        <section class="card" aria-labelledby="t-sw">
+          <div class="card-head"><h3 id="t-sw">Stopwatch</h3><span class="tag pink">Mini-App</span></div>
+          <p class="desc">Timer presisi sampai seperseratus detik, lengkap dengan catatan putaran (lap).</p>
+          <div class="sw-display mono" id="swDisplay">00:00.00</div>
+          <div class="btn-row">
+            <button class="btn primary" id="swToggle" type="button">Mulai</button>
+            <button class="btn" id="swLap" type="button">Lap</button>
+            <button class="btn" id="swReset" type="button">Reset</button>
+          </div>
+          <ul class="lap-list mono" id="swLaps"></ul>
+        </section>
+
+        <!-- PASSWORD -->
+        <section class="card" aria-labelledby="t-pw">
+          <div class="card-head"><h3 id="t-pw">Generator Password</h3><span class="tag violet">Mini-App</span></div>
+          <p class="desc">Bikin password acak yang kuat langsung di browser — tidak dikirim ke mana-mana.</p>
+          <div class="pw-out">
+            <output class="mono" id="pwOut" aria-label="Password hasil generate">Klik “Buat Password”</output>
+            <button class="btn" id="pwCopy" type="button">Salin</button>
+          </div>
+          <div class="pw-len">
+            <label for="pwLen" style="font-weight:600; font-size:.9rem;">Panjang</label>
+            <input type="range" id="pwLen" min="8" max="40" value="16" />
+            <b class="mono" id="pwLenVal">16</b>
+          </div>
+          <div class="toggle-row" role="group" aria-label="Pilihan karakter">
+            <button class="toggle" type="button" id="pwUpper" aria-pressed="true">Huruf Besar</button>
+            <button class="toggle" type="button" id="pwNum" aria-pressed="true">Angka</button>
+            <button class="toggle" type="button" id="pwSym" aria-pressed="true">Simbol</button>
+          </div>
+          <p class="status" id="pwStatus"></p>
+          <div class="btn-row">
+            <button class="btn primary" id="pwGen" type="button">Buat Password</button>
+          </div>
+        </section>
+
+        <!-- DICE -->
+        <section class="card" aria-labelledby="t-dice">
+          <div class="card-head"><h3 id="t-dice">Lempar Dadu</h3><span class="tag lime">Mini-App</span></div>
+          <p class="desc">Dua dadu buat mutusin hal-hal penting dalam hidup: siapa yang traktir, siapa yang cuci piring.</p>
+          <div class="dice-row">
+            <div class="die" id="die1" aria-label="Dadu pertama"></div>
+            <div class="die" id="die2" aria-label="Dadu kedua"></div>
+          </div>
+          <p class="status" id="diceStatus" style="text-align:center;"><span id="diceLabel">Total:</span> <b class="mono" id="diceTotal">7</b></p>
+          <div class="btn-row" style="justify-content:center;">
+            <button class="btn primary" id="diceRoll" type="button">Lempar Dadu</button>
+          </div>
+        </section>
+
+        <!-- CALCULATOR -->
+        <section class="card" aria-labelledby="t-calc">
+          <div class="card-head"><h3 id="t-calc">Kalkulator</h3><span class="tag coral">Mini-App</span></div>
+          <p class="desc">Hitung-hitungan cepat: tambah, kurang, kali, bagi, persen. Mendukung urutan operasi yang benar.</p>
+          <div class="calc-display mono" id="calcDisplay">0</div>
+          <div class="calc-grid" id="calcGrid" role="group" aria-label="Tombol kalkulator"></div>
+        </section>
+      </div>
+
+      <footer>Playground ini jalan 100% di browser kamu — skor &amp; catatan cuma hidup selama halaman ini terbuka.</footer>
+    </div>
+
+    <script>
+      "use strict";
+      var $ = function (id) { return document.getElementById(id); };
+
+      /* ================= SNAKE ================= */
+      (function () {
+        var canvas = $("snakeCanvas"), ctx = canvas.getContext("2d");
+        var COLS = 16, ROWS = 16, CELL = canvas.width / COLS;
+        var snake, dir, nextDir, food, score = 0, best = 0, timer = null, running = false, paused = false;
+
+        function placeFood() {
+          do {
+            food = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
+          } while (snake.some(function (s) { return s.x === food.x && s.y === food.y; }));
+        }
+        function reset() {
+          snake = [{ x: 8, y: 8 }, { x: 7, y: 8 }, { x: 6, y: 8 }];
+          dir = { x: 1, y: 0 }; nextDir = dir; score = 0;
+          $("snakeScore").textContent = "0";
+          placeFood(); draw();
+        }
+        function draw() {
+          ctx.fillStyle = "#101408"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.strokeStyle = "rgba(255,255,255,.05)"; ctx.lineWidth = 1;
+          for (var i = 1; i < COLS; i++) {
+            ctx.beginPath(); ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i * CELL); ctx.lineTo(canvas.width, i * CELL); ctx.stroke();
+          }
+          ctx.fillStyle = "#ff5d47";
+          ctx.beginPath();
+          ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2 - 3, 0, Math.PI * 2);
+          ctx.fill();
+          snake.forEach(function (s, idx) {
+            ctx.fillStyle = idx === 0 ? "#a3e635" : "#65a30d";
+            ctx.fillRect(s.x * CELL + 2, s.y * CELL + 2, CELL - 4, CELL - 4);
+          });
+        }
+        function step() {
+          dir = nextDir;
+          var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+          if (head.x < 0 || head.y < 0 || head.x >= COLS || head.y >= ROWS ||
+              snake.some(function (s) { return s.x === head.x && s.y === head.y; })) {
+            gameOver(); return;
+          }
+          snake.unshift(head);
+          if (head.x === food.x && head.y === food.y) {
+            score += 10;
+            $("snakeScore").textContent = String(score);
+            if (score > best) { best = score; $("snakeBest").textContent = String(best); }
+            placeFood();
+          } else { snake.pop(); }
+          draw();
+        }
+        function startLoop() { timer = setInterval(step, 135); }
+        function stopLoop() { if (timer) { clearInterval(timer); timer = null; } }
+        function gameOver() {
+          stopLoop(); running = false; paused = false;
+          $("snakeStart").textContent = "Main Lagi";
+          $("snakeStatus").textContent = "Game over! Skor akhir " + score + ". Tekan Main Lagi buat coba ngalahin skor terbaikmu.";
+        }
+        function setDir(name) {
+          var map = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
+          var d = map[name]; if (!d) return;
+          if (d.x === -dir.x && d.y === -dir.y) return;
+          if (snake.length > 1 && d.x === -nextDir.x && d.y === -nextDir.y && (nextDir.x !== dir.x || nextDir.y !== dir.y)) return;
+          nextDir = d;
+        }
+        $("snakeStart").addEventListener("click", function () {
+          reset(); stopLoop(); running = true; paused = false;
+          $("snakeStart").textContent = "Ulang dari Awal";
+          $("snakeStatus").textContent = "Gas! Arahkan pakai panah / WASD / tombol di bawah.";
+          startLoop();
+        });
+        $("snakePause").addEventListener("click", function () {
+          if (!running) return;
+          paused = !paused;
+          if (paused) { stopLoop(); $("snakePause").textContent = "Lanjut"; $("snakeStatus").textContent = "Jeda dulu. Napas."; }
+          else { startLoop(); $("snakePause").textContent = "Jeda"; $("snakeStatus").textContent = "Lanjut main!"; }
+        });
+        document.querySelectorAll(".dpad button").forEach(function (b) {
+          b.addEventListener("click", function () { setDir(b.getAttribute("data-dir")); });
+        });
+        var touchStart = null;
+        canvas.addEventListener("touchstart", function (e) {
+          touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }, { passive: true });
+        canvas.addEventListener("touchmove", function (e) {
+          if (!touchStart) return;
+          var dx = e.touches[0].clientX - touchStart.x, dy = e.touches[0].clientY - touchStart.y;
+          if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+          setDir(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"));
+          touchStart = null;
+          e.preventDefault();
+        }, { passive: false });
+        document.addEventListener("keydown", function (e) {
+          if (!running || paused) return;
+          var k = e.key.toLowerCase();
+          var name = { arrowup: "up", w: "up", arrowdown: "down", s: "down", arrowleft: "left", a: "left", arrowright: "right", d: "right" }[k];
+          if (name) { setDir(name); e.preventDefault(); }
+        });
+        reset();
+      })();
+
+      /* ================= MEMORY ================= */
+      (function () {
+        var FACES = ["🍕", "🐱", "🚀", "🎧", "🍩", "🦊"];
+        var grid = $("memGrid"), open = [], lock = false, moves = 0, pairs = 0;
+        function shuffle(a) {
+          for (var i = a.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t;
+          }
+          return a;
+        }
+        function build() {
+          grid.innerHTML = ""; open = []; lock = false; moves = 0; pairs = 0;
+          $("memMoves").textContent = "0"; $("memPairs").textContent = "0 / 6"; $("memStatus").textContent = "";
+          shuffle(FACES.concat(FACES)).forEach(function (face) {
+            var b = document.createElement("button");
+            b.type = "button"; b.className = "mem-card"; b.setAttribute("aria-label", "Kartu tertutup");
+            b.innerHTML = '<span class="back">?</span><span class="face">' + face + "</span>";
+            b.addEventListener("click", function () {
+              if (lock || b.classList.contains("open") || b.classList.contains("done")) return;
+              b.classList.add("open"); b.setAttribute("aria-label", "Kartu " + face);
+              open.push({ el: b, face: face });
+              if (open.length === 2) {
+                moves++; $("memMoves").textContent = String(moves);
+                if (open[0].face === open[1].face) {
+                  open.forEach(function (o) { o.el.classList.add("done"); o.el.classList.remove("open"); });
+                  open = []; pairs++;
+                  $("memPairs").textContent = pairs + " / 6";
+                  if (pairs === 6) $("memStatus").textContent = "Mantap! Semua pasangan ketemu dalam " + moves + " langkah. 🎉";
+                } else {
+                  lock = true;
+                  var first = open[0], second = open[1]; open = [];
+                  setTimeout(function () {
+                    first.el.classList.remove("open"); second.el.classList.remove("open");
+                    first.el.setAttribute("aria-label", "Kartu tertutup");
+                    second.el.setAttribute("aria-label", "Kartu tertutup");
+                    lock = false;
+                  }, 750);
+                }
+              }
+            });
+            grid.appendChild(b);
+          });
+        }
+        $("memReset").addEventListener("click", build);
+        build();
+      })();
+
+      /* ================= TIC-TAC-TOE ================= */
+      (function () {
+        var LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        var grid = $("tttGrid"), board, over, tally = { X: 0, O: 0, D: 0 };
+        function winner(b) {
+          for (var i = 0; i < LINES.length; i++) {
+            var L = LINES[i];
+            if (b[L[0]] && b[L[0]] === b[L[1]] && b[L[1]] === b[L[2]]) return { who: b[L[0]], line: L };
+          }
+          return null;
+        }
+        function aiMove() {
+          var empty = board.map(function (v, i) { return v ? -1 : i; }).filter(function (i) { return i >= 0; });
+          if (!empty.length) return -1;
+          function findFor(mark) {
+            for (var n = 0; n < empty.length; n++) {
+              var i = empty[n], copy = board.slice(); copy[i] = mark;
+              var w = winner(copy);
+              if (w && w.who === mark) return i;
+            }
+            return -1;
+          }
+          var win = findFor("O"); if (win >= 0) return win;
+          var block = findFor("X"); if (block >= 0) return block;
+          if (board[4] === "") return 4;
+          return empty[Math.floor(Math.random() * empty.length)];
+        }
+        function render(winLine) {
+          grid.innerHTML = "";
+          board.forEach(function (v, i) {
+            var b = document.createElement("button");
+            b.type = "button"; b.className = "ttt-cell" + (winLine && winLine.indexOf(i) >= 0 ? " win" : "");
+            b.textContent = v; b.disabled = over || v !== "";
+            b.setAttribute("aria-label", "Kotak " + (i + 1) + (v ? " isi " + v : " kosong"));
+            b.addEventListener("click", function () { play(i); });
+            grid.appendChild(b);
+          });
+        }
+        function finish(w) {
+          over = true;
+          if (w) {
+            tally[w.who]++;
+            $("tttStatus").textContent = w.who === "X" ? "Kamu menang! 🎉 Komputer sampai mikir keras barusan." : "Komputer menang ronde ini. Balas di ronde baru!";
+            render(w.line);
+          } else {
+            tally.D++;
+            $("tttStatus").textContent = "Seri! Imbang — nggak ada yang mau ngalah.";
+            render(null);
+          }
+          $("tttWinX").textContent = String(tally.X);
+          $("tttWinO").textContent = String(tally.O);
+          $("tttDraw").textContent = String(tally.D);
+        }
+        function play(i) {
+          if (over || board[i]) return;
+          board[i] = "X";
+          var w = winner(board);
+          if (w) { finish(w); return; }
+          if (board.every(function (v) { return v; })) { finish(null); return; }
+          render(null);
+          $("tttStatus").textContent = "Komputer lagi mikir…";
+          setTimeout(function () {
+            var m = aiMove(); if (m >= 0) board[m] = "O";
+            var w2 = winner(board);
+            if (w2) { finish(w2); return; }
+            if (board.every(function (v) { return v; })) { finish(null); return; }
+            render(null);
+            $("tttStatus").textContent = "Giliranmu. Pilih kotak kosong.";
+          }, 320);
+        }
+        function reset() { board = ["", "", "", "", "", "", "", "", ""]; over = false; render(null); $("tttStatus").textContent = "Giliranmu. Pilih kotak kosong."; }
+        $("tttReset").addEventListener("click", reset);
+        reset();
+      })();
+
+      /* ================= REACTION TEST ================= */
+      (function () {
+        var box = $("reactBox"), big = $("reactBig"), small = $("reactSmall");
+        var state = "idle", timeout = null, startAt = 0, best = null;
+        function setIdle(msg) {
+          state = "idle"; box.className = "react-box";
+          big.textContent = "Klik untuk mulai";
+          small.textContent = msg || "Kotak akan merah dulu — jangan klik sebelum hijau.";
+        }
+        box.addEventListener("click", function () {
+          if (state === "idle") {
+            state = "waiting"; box.className = "react-box wait";
+            big.textContent = "Tunggu hijau…";
+            small.textContent = "Jangan klik dulu!";
+            timeout = setTimeout(function () {
+              state = "ready"; box.className = "react-box ready";
+              big.textContent = "KLIK!";
+              small.textContent = "Sekarang!";
+              startAt = performance.now();
+            }, 1200 + Math.random() * 2600);
+          } else if (state === "waiting") {
+            clearTimeout(timeout);
+            setIdle("Kepencet duluan! Itu namanya false start. Coba lagi, tunggu hijaunya.");
+          } else if (state === "ready") {
+            var ms = Math.round(performance.now() - startAt);
+            $("reactLast").textContent = ms + " ms";
+            if (best === null || ms < best) { best = ms; $("reactBest").textContent = ms + " ms"; }
+            state = "idle"; box.className = "react-box";
+            big.textContent = ms + " ms";
+            small.textContent = ms < 200 ? "Refleks dewa. Klik lagi buat coba ngalahin itu." :
+              ms < 300 ? "Cepat banget! Klik lagi buat coba lebih cepat." :
+              ms < 450 ? "Lumayan. Rata-rata orang sekitar 250 ms. Klik buat coba lagi." :
+              "Agak santai ya. Klik buat coba lagi — fokus ke warnanya.";
+          }
+        });
+      })();
+
+      /* ================= STOPWATCH ================= */
+      (function () {
+        var disp = $("swDisplay"), lapsEl = $("swLaps");
+        var startAt = 0, elapsed = 0, timer = null, lapCount = 0, lastLapTotal = 0;
+        function fmt(ms) {
+          var m = Math.floor(ms / 60000), s = Math.floor(ms / 1000) % 60, cs = Math.floor(ms / 10) % 100;
+          function p(n) { return (n < 10 ? "0" : "") + n; }
+          return p(m) + ":" + p(s) + "." + p(cs);
+        }
+        function tick() { disp.textContent = fmt(elapsed + (Date.now() - startAt)); }
+        $("swToggle").addEventListener("click", function () {
+          if (timer) {
+            elapsed += Date.now() - startAt;
+            clearInterval(timer); timer = null;
+            disp.textContent = fmt(elapsed);
+            $("swToggle").textContent = "Lanjut";
+          } else {
+            startAt = Date.now();
+            timer = setInterval(tick, 31);
+            $("swToggle").textContent = "Berhenti";
+          }
+        });
+        $("swLap").addEventListener("click", function () {
+          var total = elapsed + (timer ? Date.now() - startAt : 0);
+          if (total === 0) return;
+          lapCount++;
+          var li = document.createElement("li");
+          li.innerHTML = "<span>Lap " + lapCount + "</span><span>+" + fmt(total - lastLapTotal) + "</span><span>" + fmt(total) + "</span>";
+          lapsEl.insertBefore(li, lapsEl.firstChild);
+          lastLapTotal = total;
+        });
+        $("swReset").addEventListener("click", function () {
+          clearInterval(timer); timer = null; elapsed = 0; lapCount = 0; lastLapTotal = 0;
+          disp.textContent = "00:00.00"; lapsEl.innerHTML = "";
+          $("swToggle").textContent = "Mulai";
+        });
+      })();
+
+      /* ================= PASSWORD GENERATOR ================= */
+      (function () {
+        var SETS = {
+          lower: "abcdefghjkmnpqrstuvwxyz",
+          upper: "ABCDEFGHJKMNPQRSTUVWXYZ",
+          num: "23456789",
+          sym: "!@#$%^&*()-_=+[]{}<>?"
+        };
+        function gen() {
+          var pool = SETS.lower;
+          if ($("pwUpper").getAttribute("aria-pressed") === "true") pool += SETS.upper;
+          if ($("pwNum").getAttribute("aria-pressed") === "true") pool += SETS.num;
+          if ($("pwSym").getAttribute("aria-pressed") === "true") pool += SETS.sym;
+          var len = parseInt($("pwLen").value, 10), out = "", buf = new Uint32Array(len);
+          crypto.getRandomValues(buf);
+          for (var i = 0; i < len; i++) out += pool[buf[i] % pool.length];
+          $("pwOut").textContent = out;
+          $("pwStatus").textContent = "";
+        }
+        ["pwUpper", "pwNum", "pwSym"].forEach(function (id) {
+          $(id).addEventListener("click", function () {
+            var el = $(id);
+            el.setAttribute("aria-pressed", el.getAttribute("aria-pressed") === "true" ? "false" : "true");
+          });
+        });
+        $("pwLen").addEventListener("input", function () { $("pwLenVal").textContent = $("pwLen").value; });
+        $("pwGen").addEventListener("click", gen);
+        $("pwCopy").addEventListener("click", function () {
+          var text = $("pwOut").textContent;
+          if (!text || text.indexOf("Klik") === 0) { $("pwStatus").textContent = "Buat passwordnya dulu, baru disalin."; return; }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+              $("pwStatus").textContent = "Tersalin! Tempel di tempat yang aman.";
+            }, function () { $("pwStatus").textContent = "Gagal menyalin otomatis — salin manual dari kotak di atas."; });
+          } else {
+            $("pwStatus").textContent = "Browser ini tidak mendukung salin otomatis — salin manual dari kotak di atas.";
+          }
+        });
+        gen();
+      })();
+
+      /* ================= DICE ================= */
+      (function () {
+        var PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+        function buildDie(el) {
+          el.innerHTML = "";
+          for (var i = 0; i < 9; i++) { var s = document.createElement("span"); s.className = "pip"; el.appendChild(s); }
+        }
+        function setDie(el, val) {
+          var pips = el.querySelectorAll(".pip");
+          pips.forEach(function (p, i) { p.classList.toggle("on", PIPS[val].indexOf(i) >= 0); });
+        }
+        buildDie($("die1")); buildDie($("die2"));
+        setDie($("die1"), 3); setDie($("die2"), 4);
+        $("diceRoll").addEventListener("click", function () {
+          var d1 = $("die1"), d2 = $("die2");
+          d1.classList.remove("rolling"); d2.classList.remove("rolling");
+          void d1.offsetWidth;
+          d1.classList.add("rolling"); d2.classList.add("rolling");
+          var spins = 0;
+          var iv = setInterval(function () {
+            setDie(d1, 1 + Math.floor(Math.random() * 6));
+            setDie(d2, 1 + Math.floor(Math.random() * 6));
+            if (++spins >= 6) {
+              clearInterval(iv);
+              var a = 1 + Math.floor(Math.random() * 6), b = 1 + Math.floor(Math.random() * 6);
+              setDie(d1, a); setDie(d2, b);
+              $("diceTotal").textContent = String(a + b);
+              $("diceLabel").textContent = a === b ? "Dobel!" : "Total:";
+            }
+          }, 70);
+        });
+      })();
+
+      /* ================= CALCULATOR ================= */
+      (function () {
+        var disp = $("calcDisplay"), expr = "", justEvaled = false;
+        var KEYS = ["C", "(", ")", "÷", "7", "8", "9", "×", "4", "5", "6", "−", "1", "2", "3", "+", "0", ".", "%", "="];
+        function show() { disp.textContent = expr === "" ? "0" : expr; }
+        function evaluate(s) {
+          var tokens = [], i = 0;
+          while (i < s.length) {
+            var c = s[i];
+            if (/[0-9.]/.test(c)) {
+              var num = "";
+              while (i < s.length && /[0-9.]/.test(s[i])) num += s[i++];
+              tokens.push(parseFloat(num));
+            } else if ("+-*/%()".indexOf(c) >= 0) { tokens.push(c); i++; }
+            else if (c === " ") { i++; }
+            else throw new Error("bad char");
+          }
+          var pos = 0;
+          function peek() { return tokens[pos]; }
+          function parseExpr() {
+            var v = parseTerm();
+            while (peek() === "+" || peek() === "-") { var op = tokens[pos++]; var r = parseTerm(); v = op === "+" ? v + r : v - r; }
+            return v;
+          }
+          function parseTerm() {
+            var v = parseFactor();
+            while (peek() === "*" || peek() === "/" || peek() === "%") {
+              var op = tokens[pos++];
+              var r = parseFactor();
+              if (op === "*") v = v * r;
+              else if (op === "/") { if (r === 0) throw new Error("div0"); v = v / r; }
+              else v = v * r / 100;
+            }
+            return v;
+          }
+          function parseFactor() {
+            var t = tokens[pos++];
+            if (t === "(") { var v = parseExpr(); if (tokens[pos++] !== ")") throw new Error("paren"); return v; }
+            if (t === "-") return -parseFactor();
+            if (t === "+") return parseFactor();
+            if (typeof t === "number") return t;
+            throw new Error("factor");
+          }
+          var result = parseExpr();
+          if (pos !== tokens.length || !isFinite(result)) throw new Error("invalid");
+          return Math.round(result * 1e10) / 1e10;
+        }
+        KEYS.forEach(function (k) {
+          var b = document.createElement("button");
+          b.type = "button"; b.textContent = k;
+          if ("÷×−+".indexOf(k) >= 0) b.className = "op";
+          if (k === "=") b.className = "eq";
+          b.setAttribute("aria-label", "Tombol " + k);
+          b.addEventListener("click", function () {
+            if (k === "C") { expr = ""; justEvaled = false; }
+            else if (k === "=") {
+              if (!expr) return;
+              try { expr = String(evaluate(expr)); justEvaled = true; }
+              catch (e) { expr = ""; disp.textContent = "Error"; return; }
+            } else {
+              var insert = k === "÷" ? "/" : k === "×" ? "*" : k === "−" ? "-" : k;
+              if (justEvaled && /[0-9.(]/.test(insert)) expr = "";
+              justEvaled = false;
+              expr += insert;
+            }
+            show();
+          });
+          $("calcGrid").appendChild(b);
+        });
+        show();
+      })();
+    </script>
+  </body>
+</html>
