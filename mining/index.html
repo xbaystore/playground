@@ -1561,11 +1561,21 @@
       }
 
       // ---------------- loop ----------------
-      var clock = THREE.Timer ? new THREE.Timer() : new THREE.Clock();
-      function frame() {
+      // Game clock: computed from the rAF timestamp / performance.now()
+      // directly. Do NOT use THREE.Timer here — in this three.js build
+      // Timer.getDelta() only advances when update() is called every frame
+      // and it has no .elapsedTime property, so dt came out 0 forever and
+      // the whole game (movement included) was frozen.
+      var lastNow = performance.now(), elapsed = 0;
+      function frame(now) {
         requestAnimationFrame(frame);
-        var dt = Math.min(clock.getDelta(), 0.05);
-        var t = clock.elapsedTime;
+        if (now === undefined || now === null) now = performance.now();
+        var dt = (now - lastNow) / 1000;
+        lastNow = now;
+        if (!(dt > 0)) dt = 0;
+        if (dt > 0.05) dt = 0.05;
+        elapsed += dt;
+        var t = elapsed;
         try { update(dt, t); } catch (err) {
           errBox.style.display = "block";
           errBox.textContent = "Error: " + err.message;
