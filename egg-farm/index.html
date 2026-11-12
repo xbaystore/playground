@@ -204,7 +204,7 @@
       <button id="buy-btn" type="button"></button>
     </div>
 
-    <div class="hud" id="hint">Gerak: WASD, joystick, atau seret layar — pungut telur di kandang, jual ke pembeli di trotoar</div>
+    <div class="hud" id="hint">Gerak: tahan layar & arahkan jari, joystick, atau WASD — pungut telur di kandang, jual ke pembeli di trotoar</div>
     <div id="nametag"><div class="nm">@0xbyy</div><div id="nametag-eggs">Telur: 0</div></div>
     <div id="floaters"></div>
     <div id="toast"></div>
@@ -756,10 +756,13 @@
       buyBtn.addEventListener("click", function () { audio(); buyChicken(); });
 
       // ---------------- input ----------------
-      // Three redundant movement channels feed the same vector in update():
-      // keyboard (e.code + e.key), the fixed joystick, and drag-anywhere on
-      // the 3D view (floating joystick). Whichever the device delivers, the
-      // character moves.
+      // Redundant movement channels feed the same vector in update():
+      // keyboard (e.code + e.key), the fixed joystick, and hold-to-steer on
+      // the 3D view: while a press is held, update() recomputes the walk
+      // direction every frame from the finger's last known screen position
+      // vs the character's screen position. That last channel only needs
+      // the press-down itself, so the character keeps walking even on
+      // webviews that swallow some or all move events after the press.
       var keys = {};
       var KEYMAP = { w: "KeyW", a: "KeyA", s: "KeyS", d: "KeyD", arrowup: "ArrowUp", arrowdown: "ArrowDown", arrowleft: "ArrowLeft", arrowright: "ArrowRight" };
       function setKey(e, on) {
@@ -772,7 +775,7 @@
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].indexOf(e.code) >= 0) e.preventDefault();
       });
       document.addEventListener("keyup", function (e) { setKey(e, false); });
-      window.addEventListener("blur", function () { keys = {}; endJoy(); endDrag(); });
+      window.addEventListener("blur", function () { keys = {}; endJoy(); endHold(); });
 
       function isUiTarget(t) {
         return !!(t && t.closest && t.closest("button, #missions, #actions, #joy, .mission"));
@@ -810,6 +813,10 @@
       joyEl.addEventListener("pointermove", function (e) { if (e.pointerId === joyId) moveJoy(e); });
       joyEl.addEventListener("pointerup", endJoy);
       joyEl.addEventListener("pointercancel", endJoy);
+      // Safety net: if pointer capture is ever lost, a release anywhere
+      // still ends the joystick instead of leaving it stuck on.
+      document.addEventListener("pointerup", function (e) { if (joyId !== null && e.pointerId === joyId) endJoy(); });
+      document.addEventListener("pointercancel", function (e) { if (joyId !== null && e.pointerId === joyId) endJoy(); });
       // Mouse fallback for the fixed joystick (older engines w/o pointer capture)
       var joyMouse = false;
       joyEl.addEventListener("mousedown", function (e) { joyMouse = true; audio(); moveJoy(e); });
@@ -827,75 +834,89 @@
       joyEl.addEventListener("touchend", function () { if (joyId === null) endJoy(); });
       joyEl.addEventListener("touchcancel", function () { if (joyId === null) endJoy(); });
 
-      // --- drag anywhere on the 3D view = floating joystick ---
+      // --- hold anywhere on the 3D view = steer toward the held finger ---
+      // Only the press position is needed: steerHold() (called from update)
+      // recomputes the direction every frame from the finger's last known
+      // screen position vs the character's screen position, so the walk
+      // continues even if the webview never delivers another move event.
+      // Move events, when they do arrive, just update the finger position.
+      // Any fresh press re-anchors the hold; any release ends it.
       var floatEl = document.getElementById("joy-float");
       var floatKnob = document.getElementById("joy-float-knob");
-      var dragVec = { x: 0, y: 0 }, dragId = null, dragAX = 0, dragAY = 0, dragTouchId = null;
-      var DRAG_MAX = 52, DRAG_DEAD = 6;
-      function dragShow(x, y) {
+      var holdVec = { x: 0, y: 0 };
+      var holdId = null, holdKind = "", holdX = 0, holdY = 0, holdAX = 0, holdAY = 0;
+      var HOLD_DEAD = 26, HOLD_FULL = 95;
+      function holdShow(x, y) {
         floatEl.style.display = "block";
         floatEl.style.left = (x - 64) + "px";
         floatEl.style.top = (y - 64) + "px";
         floatKnob.style.transform = "translate(-50%, -50%)";
       }
-      function dragMove(x, y) {
-        var dx = x - dragAX, dy = y - dragAY, d = Math.hypot(dx, dy);
-        if (d > DRAG_MAX) { dx = dx / d * DRAG_MAX; dy = dy / d * DRAG_MAX; }
+      function holdKnob(x, y) {
+        var dx = x - holdAX, dy = y - holdAY, d = Math.hypot(dx, dy), max = 52;
+        if (d > max) { dx = dx / d * max; dy = dy / d * max; }
         floatKnob.style.transform = "translate(calc(-50% + " + dx + "px), calc(-50% + " + dy + "px))";
-        dragVec.x = Math.abs(dx) < DRAG_DEAD ? 0 : dx / DRAG_MAX;
-        dragVec.y = Math.abs(dy) < DRAG_DEAD ? 0 : dy / DRAG_MAX;
       }
-      function endDrag() {
-        dragId = null; dragTouchId = null; dragVec.x = 0; dragVec.y = 0;
+      function holdStart(kind, id, x, y) {
+        holdKind = kind; holdId = id; holdX = holdAX = x; holdY = holdAY = y;
+        holdShow(x, y);
+        audio();
+      }
+      function holdMove(x, y) { holdX = x; holdY = y; holdKnob(x, y); }
+      function endHold() {
+        holdId = null; holdKind = ""; holdVec.x = 0; holdVec.y = 0;
         floatEl.style.display = "none";
       }
+      function steerHold() {
+        if (holdId === null) { holdVec.x = 0; holdVec.y = 0; return; }
+        projV.set(player.group.position.x, player.group.position.y + 0.9, player.group.position.z).project(camera);
+        if (projV.z > 1) { holdVec.x = 0; holdVec.y = 0; return; }
+        var px = (projV.x * 0.5 + 0.5) * window.innerWidth;
+        var py = (-projV.y * 0.5 + 0.5) * window.innerHeight;
+        var dx = holdX - px, dy = holdY - py, d = Math.hypot(dx, dy);
+        if (d < HOLD_DEAD) { holdVec.x = 0; holdVec.y = 0; return; }
+        var s = Math.min(1, d / HOLD_FULL);
+        holdVec.x = dx / d * s; holdVec.y = dy / d * s;
+      }
       document.addEventListener("pointerdown", function (e) {
-        if (dragId !== null || joyId !== null || isUiTarget(e.target)) return;
-        dragId = e.pointerId; dragAX = e.clientX; dragAY = e.clientY;
-        dragVec.x = 0; dragVec.y = 0;
-        dragShow(e.clientX, e.clientY);
-        audio();
+        if (joyId !== null || isUiTarget(e.target)) return;
+        holdStart("pointer", e.pointerId, e.clientX, e.clientY);
       }, { passive: true });
       document.addEventListener("pointermove", function (e) {
-        if (e.pointerId === dragId) dragMove(e.clientX, e.clientY);
+        if (holdKind === "pointer" && e.pointerId === holdId) holdMove(e.clientX, e.clientY);
       }, { passive: true });
-      document.addEventListener("pointerup", function (e) { if (e.pointerId === dragId) endDrag(); });
-      document.addEventListener("pointercancel", function (e) { if (e.pointerId === dragId) endDrag(); });
-      // Touch + mouse fallbacks for the floating joystick
+      function holdPointerEnd(e) { if (holdKind === "pointer" && e.pointerId === holdId) endHold(); }
+      document.addEventListener("pointerup", holdPointerEnd);
+      document.addEventListener("pointercancel", holdPointerEnd);
+      // Touch + mouse fallbacks for engines without Pointer Events (the
+      // pointer path, when present, wins: later fallbacks see holdKind set)
       document.addEventListener("touchstart", function (e) {
-        if (dragTouchId !== null || dragId !== null || joyId !== null) return;
+        if (joyId !== null || holdKind === "pointer") return;
         var t = e.changedTouches[0];
         if (!t || isUiTarget(e.target)) return;
-        dragTouchId = t.identifier; dragAX = t.clientX; dragAY = t.clientY;
-        dragVec.x = 0; dragVec.y = 0;
-        dragShow(t.clientX, t.clientY);
-        audio();
+        holdStart("touch", t.identifier, t.clientX, t.clientY);
       }, { passive: true });
       document.addEventListener("touchmove", function (e) {
-        if (dragTouchId === null) return;
+        if (holdKind !== "touch") return;
         for (var i = 0; i < e.changedTouches.length; i++) {
           var t = e.changedTouches[i];
-          if (t.identifier === dragTouchId) dragMove(t.clientX, t.clientY);
+          if (t.identifier === holdId) holdMove(t.clientX, t.clientY);
         }
       }, { passive: true });
-      function endTouchDrag(e) {
-        if (dragTouchId === null) return;
+      function endTouchHold(e) {
+        if (holdKind !== "touch") return;
         for (var i = 0; i < e.changedTouches.length; i++) {
-          if (e.changedTouches[i].identifier === dragTouchId) { endDrag(); return; }
+          if (e.changedTouches[i].identifier === holdId) { endHold(); return; }
         }
       }
-      document.addEventListener("touchend", endTouchDrag);
-      document.addEventListener("touchcancel", endTouchDrag);
-      var dragMouse = false;
+      document.addEventListener("touchend", endTouchHold);
+      document.addEventListener("touchcancel", endTouchHold);
       document.addEventListener("mousedown", function (e) {
-        if (dragMouse || dragId !== null || joyId !== null || isUiTarget(e.target)) return;
-        dragMouse = true; dragAX = e.clientX; dragAY = e.clientY;
-        dragVec.x = 0; dragVec.y = 0;
-        dragShow(e.clientX, e.clientY);
-        audio();
+        if (joyId !== null || holdKind === "pointer" || isUiTarget(e.target)) return;
+        holdStart("mouse", 0, e.clientX, e.clientY);
       });
-      document.addEventListener("mousemove", function (e) { if (dragMouse) dragMove(e.clientX, e.clientY); });
-      document.addEventListener("mouseup", function () { if (dragMouse) { dragMouse = false; if (dragId === null && dragTouchId === null) endDrag(); } });
+      document.addEventListener("mousemove", function (e) { if (holdKind === "mouse") holdMove(e.clientX, e.clientY); });
+      document.addEventListener("mouseup", function () { if (holdKind === "mouse") endHold(); });
 
       // ---------------- update ----------------
       var CAM_OFF = new THREE.Vector3(10.5, 12.5, 10.5);
@@ -905,7 +926,8 @@
 
       function update(dt, t) {
         // --- input direction (camera relative) ---
-        var ix = joyVec.x + dragVec.x, iy = joyVec.y + dragVec.y;
+        steerHold();
+        var ix = joyVec.x + holdVec.x, iy = joyVec.y + holdVec.y;
         if (keys.KeyA || keys.ArrowLeft) ix -= 1;
         if (keys.KeyD || keys.ArrowRight) ix += 1;
         if (keys.KeyW || keys.ArrowUp) iy -= 1;
@@ -1025,12 +1047,19 @@
       }
 
       // ---------------- loop ----------------
-      var clock = THREE.Timer ? new THREE.Timer() : new THREE.Clock();
-      function frame() {
+      // dt comes straight from the requestAnimationFrame timestamp. (The old
+      // code read THREE.Timer, whose getDelta() never advances without
+      // update() and which has no .elapsedTime — dt stayed 0 and t was
+      // undefined, so the whole update froze: no movement, NaN NPCs.)
+      var lastTs = -1, elapsed = 0;
+      function frame(ts) {
         requestAnimationFrame(frame);
-        var dt = Math.min(clock.getDelta(), 0.05);
-        var t = clock.elapsedTime;
-        try { update(dt, t); } catch (err) {
+        if (typeof ts !== "number") ts = performance.now();
+        if (lastTs < 0) lastTs = ts;
+        var dt = Math.min(Math.max((ts - lastTs) / 1000, 0), 0.05);
+        lastTs = ts;
+        elapsed += dt;
+        try { update(dt, elapsed); } catch (err) {
           errBox.style.display = "block";
           errBox.textContent = "Error: " + err.message;
         }
