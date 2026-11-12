@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tanda Tangani Delegasi make.fun</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px;
+    background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 1.35rem; margin: 8px 0 12px; }
+  h2 { font-size: 1rem; margin: 20px 0 6px; }
+  p.note {
+    background: #16213a; border: 1px solid #2f4a7a; border-radius: 8px;
+    padding: 10px 12px; font-size: 0.95rem;
+  }
+  label { display: block; font-weight: 600; margin: 14px 0 6px; font-size: 0.95rem; }
+  textarea {
+    width: 100%; background: #161b22; color: #e6edf3;
+    border: 1px solid #30363d; border-radius: 8px;
+    padding: 10px; font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.82rem; resize: vertical; word-break: break-all;
+  }
+  #msg { min-height: 130px; }
+  .sig { min-height: 74px; }
+  button {
+    cursor: pointer; border: 0; border-radius: 8px;
+    font-size: 1rem; font-weight: 600;
+  }
+  #signBtn {
+    display: block; width: 100%; margin: 18px 0 6px;
+    padding: 14px; background: #7c5cff; color: #fff;
+  }
+  #signBtn:disabled { background: #44406b; color: #aaa; }
+  .copyBtn {
+    padding: 8px 14px; background: #21262d; color: #e6edf3;
+    border: 1px solid #30363d; font-size: 0.9rem; margin-top: 6px;
+  }
+  #status { min-height: 1.4em; font-size: 0.95rem; margin-top: 10px; }
+  #status.ok { color: #3fb950; }
+  #status.err { color: #f85149; }
+  #wallet { font-size: 0.9rem; color: #8b949e; word-break: break-all; }
+  #result { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Tanda Tangani Delegasi make.fun</h1>
+
+  <p class="note">Periksa: Payout harus alamat wallet kamu sendiri (ALBc…2wnS). Ini cuma tanda tangan pesan, bukan transaksi — tidak ada dana yang bergerak.</p>
+
+  <label for="msg">Pesan yang akan ditandatangani:</label>
+  <textarea id="msg" readonly>make.fun delegation v1; Domain: make.fun; Payout: ALBcRoQ18JwH5QNCWRgUbfSNYURsvhrsfQi2cFyW2wnS; Agent: EqkUd7Ay1WBSvhmdGNCCSS6uwwsAtoDqqYfbLvDpMyLL; Competitions: *; Nonce: 6bc4c1f368ea44c6e923d1636ab3b906; Issued At: 2026-11-12T14:54:01.641Z; Expiration Time: 2027-02-10T14:54:01.641Z</textarea>
+
+  <button id="signBtn">Hubungkan Phantom &amp; Tanda Tangani</button>
+  <div id="wallet"></div>
+  <div id="status"></div>
+
+  <div id="result">
+    <h2>Hasil tanda tangan</h2>
+
+    <label for="sig58">Tanda tangan (base58)</label>
+    <textarea id="sig58" class="sig" readonly></textarea>
+    <button class="copyBtn" data-target="sig58">Salin base58</button>
+
+    <label for="sig64">Tanda tangan (base64)</label>
+    <textarea id="sig64" class="sig" readonly></textarea>
+    <button class="copyBtn" data-target="sig64">Salin base64</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var statusEl = document.getElementById('status');
+  var walletEl = document.getElementById('wallet');
+  var resultEl = document.getElementById('result');
+  var btn = document.getElementById('signBtn');
+
+  function setStatus(text, cls) {
+    statusEl.textContent = text;
+    statusEl.className = cls || '';
+  }
+
+  var B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  function base58Encode(bytes) {
+    if (!bytes || bytes.length === 0) return '';
+    var zeros = 0;
+    while (zeros < bytes.length && bytes[zeros] === 0) zeros++;
+    var n = 0n;
+    for (var i = 0; i < bytes.length; i++) n = n * 256n + BigInt(bytes[i]);
+    var out = '';
+    while (n > 0n) {
+      out = B58[Number(n % 58n)] + out;
+      n = n / 58n;
+    }
+    var prefix = '';
+    for (var z = 0; z < zeros; z++) prefix += '1';
+    return prefix + out;
+  }
+
+  function bytesToBase64(bytes) {
+    var bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
+  function getProvider() {
+    if (window.phantom && window.phantom.solana && window.phantom.solana.isPhantom) {
+      return window.phantom.solana;
+    }
+    if (window.solana && window.solana.isPhantom) {
+      return window.solana;
+    }
+    if (window.solflare) {
+      return window.solflare;
+    }
+    return null;
+  }
+
+  btn.addEventListener('click', async function () {
+    setStatus('', '');
+    var provider = getProvider();
+    if (!provider) {
+      setStatus('Wallet tidak ditemukan. Buka halaman ini di dalam browser aplikasi Phantom (atau Solflare) di HP kamu, lalu coba lagi.', 'err');
+      return;
+    }
+    btn.disabled = true;
+    try {
+      setStatus('Menghubungkan wallet…', '');
+      var resp = await provider.connect();
+      var pubkey = (resp && resp.publicKey) || provider.publicKey;
+      if (pubkey) walletEl.textContent = 'Wallet terhubung: ' + pubkey.toString();
+
+      var message = document.getElementById('msg').value;
+      var encoded = new TextEncoder().encode(message);
+
+      setStatus('Menunggu tanda tangan di wallet kamu…', '');
+      var signed = await provider.signMessage(encoded, 'utf8');
+      var sigBytes = signed && signed.signature ? signed.signature : signed;
+      if (!sigBytes || typeof sigBytes.length !== 'number') {
+        throw new Error('Hasil tanda tangan kosong.');
+      }
+      sigBytes = sigBytes instanceof Uint8Array ? sigBytes : new Uint8Array(sigBytes);
+
+      document.getElementById('sig58').value = base58Encode(sigBytes);
+      document.getElementById('sig64').value = bytesToBase64(sigBytes);
+      resultEl.style.display = 'block';
+      setStatus('Berhasil ditandatangani. Salin salah satu tanda tangan di bawah ini.', 'ok');
+    } catch (e) {
+      var detail = e && e.message ? ' (' + e.message + ')' : '';
+      setStatus('Gagal menandatangani' + detail + '. Kalau wallet tidak muncul, buka halaman ini di dalam browser aplikasi Phantom di HP kamu.', 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  var copyBtns = document.querySelectorAll('.copyBtn');
+  for (var i = 0; i < copyBtns.length; i++) {
+    copyBtns[i].addEventListener('click', function () {
+      var ta = document.getElementById(this.getAttribute('data-target'));
+      var done = function () { setStatus('Tersalin ke clipboard.', 'ok'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ta.value).then(done, function () {
+          ta.select(); document.execCommand('copy'); done();
+        });
+      } else {
+        ta.select(); document.execCommand('copy'); done();
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
