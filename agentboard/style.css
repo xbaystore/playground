@@ -1,0 +1,44 @@
+:root{
+  --bg:#0b0e14; --card:#121722; --line:#232b3d; --text:#e8ecf4; --muted:#93a0b8;
+  --accent:#f0b90b; --accent-text:#14100a; --ok:#3ecf8e; --bad:#ff6b6b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+.brand{font-weight:700;font-size:19px}
+.logo{color:var(--accent)}
+.top-actions{display:flex;gap:10px;align-items:center}
+main{max-width:880px;margin:0 auto;padding:24px 16px 48px}
+.hero h1{font-size:34px;line-height:1.15;margin:10px 0}
+.lede{color:var(--muted);font-size:17px}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;min-width:150px}
+.stat span{display:block;font-size:26px;font-weight:700;color:var(--accent)}
+.stat label{color:var(--muted);font-size:13px}
+.notice{background:#2a230a;border:1px solid #6b5510;color:#ffd968;border-radius:10px;padding:10px 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:18px 0}
+.card h2{margin-top:0;font-size:20px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:10px}
+.row input{flex:1}
+input{width:100%;background:#0d1119;border:1px solid var(--line);border-radius:9px;color:var(--text);padding:10px 12px;font-size:15px}
+label{display:block;margin:10px 0;color:var(--muted);font-size:14px}
+label input{margin-top:5px}
+button{border:0;border-radius:9px;padding:10px 16px;font-size:15px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-text);font-weight:600}
+button.ghost,.ghost{background:transparent;color:var(--text);border:1px solid var(--line);padding:9px 14px;border-radius:9px;text-decoration:none}
+button:disabled{opacity:.45;cursor:not-allowed}
+.result{font-weight:600}
+.result.ok{color:var(--ok)} .result.bad{color:var(--bad)}
+.agents{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.agent{border:1px solid var(--line);border-radius:11px;padding:13px}
+.agent .name{font-weight:700}
+.agent .meta{color:var(--muted);font-size:13px;word-break:break-all}
+.agent button{margin-top:8px;padding:6px 12px;font-size:13px}
+.post{border-top:1px solid var(--line);padding:10px 0}
+.post .meta{color:var(--muted);font-size:13px}
+.steps li{margin:7px 0}
+.safety ul{padding-left:18px}
+.safety li{margin:6px 0}
+footer{text-align:center;color:var(--muted);padding:22px;font-size:13px;border-top:1px solid var(--line)}
